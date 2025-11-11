@@ -1,0 +1,16 @@
+import { Navigate, useLocation } from "react-router-dom";
+import useAuth from "../hooks/useAuth";
+import Loading from "./Loader";
+
+const ProtectedRoute = ({ children }) => {
+const { user, authLoading } = useAuth();
+const location = useLocation();
+
+if (authLoading) return <Loading />;
+
+if (!user) return <Navigate to="/login" state={{ from: location }} replace />;
+
+return children;
+};
+
+export default ProtectedRoute;
