@@ -1,53 +1,53 @@
-import { useForm } from 'react-hook-form';
-import { useAuth } from '../contexts/AuthProvider';
-import { useLocation, useNavigate, Link } from 'react-router-dom';
-import toast from 'react-hot-toast';
+import React from "react";
+import { useForm } from "react-hook-form";
+import { useAuth } from "../hooks/useAuth";
+import { useNavigate, useLocation, Link } from "react-router-dom";
+import toast from "react-hot-toast";
 
-export default function Login() {
-const { login, loginWithGoogle } = useAuth();
-const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm();
-const navigate = useNavigate();
-const location = useLocation();
-const from = location.state?.from || '/';
+const Login = () => {
+  const { login, googleLogin } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from?.pathname || "/";
 
-const onSubmit = async (data) => {
-try {
-await login(data.email, data.password);
-navigate(from, { replace: true });
-} catch (err) {
-toast.error(err.message || 'Failed to login');
-}
+  const { register, handleSubmit } = useForm();
+
+  const onSubmit = async (data) => {
+    try {
+      await login(data.email, data.password);
+      toast.success("Logged in");
+      navigate(from, { replace: true });
+    } catch (err) {
+      toast.error(err?.message || "Login failed");
+    }
+  };
+
+  const handleGoogle = async () => {
+    try {
+      await googleLogin();
+      toast.success("Logged in with Google");
+      navigate(from, { replace: true });
+    } catch (err) {
+      toast.error("Google login failed");
+    }
+  };
+
+  return (
+    <div className="min-h-[70vh] flex items-center justify-center">
+      <div className="w-full max-w-md bg-white p-8 rounded shadow">
+        <h2 className="text-2xl font-semibold mb-4">Login</h2>
+        <form onSubmit={handleSubmit(onSubmit)} className="grid gap-3">
+          <input {...register("email", { required: true })} placeholder="Email" className="input input-bordered" />
+          <input {...register("password", { required: true })} type="password" placeholder="Password" className="input input-bordered" />
+          <button className="btn btn-primary">Login</button>
+        </form>
+        <div className="mt-4">
+          <button className="btn btn-outline w-full" onClick={handleGoogle}>Login with Google</button>
+        </div>
+        <p className="mt-4 text-sm">Don’t have an account? <Link to="/register" className="text-primary">Register</Link></p>
+      </div>
+    </div>
+  );
 };
 
-const google = async () => {
-try {
-await loginWithGoogle();
-navigate(from, { replace: true });
-} catch (err) {
-toast.error(err.message || 'Failed to login with Google');
-}
-};
-
-return (
-<section className="container mx-auto px-4 py-10 max-w-md">
-<h1 className="font-display text-3xl font-extrabold mb-6">Login</h1>
-<form className="space-y-3" onSubmit={handleSubmit(onSubmit)}>
-<div>
-<label className="label">Email</label>
-<input className="input input-bordered w-full" {...register('email', { required: true })} />
-{errors.email && <p className="text-error text-sm mt-1">Email is required</p>}
-</div>
-<div>
-<label className="label">Password</label>
-<input type="password" className="input input-bordered w-full" {...register('password', { required: true })} />
-{errors.password && <p className="text-error text-sm mt-1">Password is required</p>}
-</div>
-<button disabled={isSubmitting} className="btn btn-primary w-full">{isSubmitting ? 'Logging in...' : 'Login'}</button>
-</form>
-<button onClick={google} className="btn btn-outline w-full mt-3">Login with Google</button>
-<p className="mt-3 text-sm">
-New to PlateShare? <Link to="/register" className="link link-primary">Create an account</Link>
-</p>
-</section>
-);
-}
+export default Login;

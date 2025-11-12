@@ -1,182 +1,181 @@
+import React, { useState } from "react";
 import { useParams } from "react-router-dom";
-import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
-import useAxios from "../hooks/useAxios";
-import Loader from "../components/Loader";
-import RequestModal from "../components/RequestModal";
-import { useState } from "react";
-import { useAuth } from "../contexts/AuthProvider";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axiosSecure from "../api/axiosSecure";
+import LoadingSpinner from "../components/LoadingSpinner";
+import { useAuth } from "../hooks/useAuth";
+import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
+import Swal from "sweetalert2";
 
-export default function FoodDetails() {
+const fetchFoodDetails = async (id) => {
+  const res = await axiosSecure.get(`/foods/${id}`);
+  return res.data;
+};
+
+const fetchRequestsForFood = async (foodId) => {
+  const res = await axiosSecure.get(`/requests/food/${foodId}`);
+  return res.data;
+};
+
+const FoodDetails = () => {
   const { id } = useParams();
-  const api = useAxios();
-  const qc = useQueryClient();
-  const [open, setOpen] = useState(false);
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const [showRequestForm, setShowRequestForm] = useState(false);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["food", id],
-    queryFn: async () => (await api.get(`/api/foods/${id}`)).data,
+  const { data: food, isLoading } = useQuery(["food", id], () => fetchFoodDetails(id));
+  const { data: requests = [], refetch: refetchRequests } = useQuery(["requests", id], () => fetchRequestsForFood(id), {
+    enabled: !!food && food.donator_email === user?.email // only fetch if owner
   });
 
-  const isOwner = user?.email && data?.donator?.email === user?.email;
+  const { register, handleSubmit, reset } = useForm();
 
-  const { data: requests, refetch, isFetching: loadingReq } = useQuery({
-    queryKey: ["requests", id],
-    enabled: !!isOwner,
-    queryFn: async () => (await api.get(`/api/requests/food/${id}`)).data,
-  });
+  const requestMutation = useMutation(
+    (payload) => axiosSecure.post(`/requests/${id}`, payload),
+    {
+      onSuccess: () => {
+        toast.success("Request submitted");
+        setShowRequestForm(false);
+        reset();
+        // refetch requests and food
+        refetchRequests();
+      },
+      onError: (err) => toast.error(err?.response?.data?.message || "Request failed")
+    }
+  );
 
-  const acceptMutation = useMutation({
-    mutationFn: async (rid) => (await api.patch(`/api/requests/${rid}/accept`)).data,
-    onSuccess: () => {
-      toast.success("Request accepted");
-      qc.invalidateQueries({ queryKey: ["food", id] });
-      refetch();
-    },
-  });
+  const updateRequestStatus = useMutation(
+    ({ requestId, action }) => axiosSecure.patch(`/requests/${requestId}/status`, { action }),
+    {
+      onSuccess: () => {
+        toast.success("Status updated");
+        queryClient.invalidateQueries(["food", id]);
+        refetchRequests();
+      },
+      onError: (err) => toast.error("Action failed")
+    }
+  );
 
-  const rejectMutation = useMutation({
-    mutationFn: async (rid) => (await api.patch(`/api/requests/${rid}/reject`)).data,
-    onSuccess: () => {
-      toast.success("Request rejected");
-      refetch();
-    },
-  });
+  if (isLoading) return <LoadingSpinner />;
 
-  if (isLoading) return <Loader />;
+  if (!food) return <p className="p-6">Food not found.</p>;
+
+  const onSubmitRequest = (data) => {
+    requestMutation.mutate({
+      location: data.location,
+      reason: data.reason,
+      contact_no: data.contact_no
+    });
+  };
 
   return (
-    <section className="container mx-auto px-4 py-10">
-      <div className="grid md:grid-cols-2 gap-8">
-        <img src={data.image} className="w-full rounded-xl border object-cover" />
-        <div>
-          <h1 className="font-display text-3xl font-extrabold">{data.name}</h1>
+    <div className="container mx-auto px-6 py-8">
+      <div className="grid md:grid-cols-3 gap-6">
+        <div className="md:col-span-2">
+          <img src={food.food_image} alt={food.food_name} className="w-full h-96 object-cover rounded-md" />
+          <div className="mt-4 bg-white p-4 rounded shadow">
+            <h2 className="text-2xl font-semibold">{food.food_name}</h2>
+            <p className="text-sm text-gray-600 mt-1">Donated by: {food.donator_name}</p>
+            <p className="mt-3">{food.additional_notes || "No additional notes."}</p>
+            <div className="mt-4 flex gap-3">
+              <button className="btn btn-primary" onClick={() => setShowRequestForm(!showRequestForm)}>
+                Request Food
+              </button>
+              <span className="py-2 px-3 rounded bg-gray-100">{food.food_quantity}</span>
+              <span className="py-2 px-3 rounded bg-gray-100">Pickup: {food.pickup_location}</span>
+            </div>
+
+            {showRequestForm && (
+              <form onSubmit={handleSubmit(onSubmitRequest)} className="mt-4 grid gap-3">
+                <input {...register("location", { required: true })} placeholder="Your location" className="input input-bordered" />
+                <textarea {...register("reason", { required: true })} placeholder="Why do you need the food?" className="textarea textarea-bordered" />
+                <input {...register("contact_no", { required: true })} placeholder="Contact number" className="input input-bordered" />
+                <div className="flex gap-3">
+                  <button type="submit" className="btn btn-success">Submit Request</button>
+                  <button type="button" className="btn btn-ghost" onClick={() => setShowRequestForm(false)}>Cancel</button>
+                </div>
+              </form>
+            )}
+          </div>
+
+          {/* Requests Table (only owner) */}
+          {food.donator_email === user?.email && (
+            <div className="mt-6 bg-white p-4 rounded shadow">
+              <h3 className="text-xl font-semibold">Requests</h3>
+              {requests?.length ? (
+                <div className="overflow-x-auto mt-3">
+                  <table className="table w-full">
+                    <thead>
+                      <tr>
+                        <th>Requester</th>
+                        <th>Location</th>
+                        <th>Contact</th>
+                        <th>Reason</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {requests.map((r) => (
+                        <tr key={r._id}>
+                          <td>
+                            <div className="flex items-center gap-2">
+                              <img src={r.requester_image || "/default.png"} alt={r.requester_name} className="w-8 h-8 rounded-full" />
+                              <span>{r.requester_name}</span>
+                            </div>
+                          </td>
+                          <td>{r.location}</td>
+                          <td>{r.contact_no}</td>
+                          <td>{r.reason}</td>
+                          <td>{r.status}</td>
+                          <td>
+                            <div className="flex gap-2">
+                              <button className="btn btn-sm btn-success" onClick={() => updateRequestStatus.mutate({ requestId: r._id, action: "accept" })}>Accept</button>
+                              <button className="btn btn-sm btn-error" onClick={() => {
+                                Swal.fire({
+                                  title: "Reject request?",
+                                  showCancelButton: true,
+                                  confirmButtonText: "Reject",
+                                  icon: "warning"
+                                }).then((res) => {
+                                  if (res.isConfirmed) updateRequestStatus.mutate({ requestId: r._id, action: "reject" });
+                                });
+                              }}>Reject</button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="text-gray-500 mt-2">No requests yet.</p>
+              )}
+            </div>
+          )}
+        </div>
+
+        <aside className="bg-white p-4 rounded shadow">
+          <h4 className="font-semibold">Donator</h4>
           <div className="flex items-center gap-3 mt-3">
-            <img
-              src={data.donator?.photo || "https://i.pravatar.cc/100?img=12"}
-              className="w-8 h-8 rounded-full"
-            />
+            <img src={food.donator_image || "/default.png"} className="w-16 h-16 rounded-full object-cover" alt={food.donator_name} />
             <div>
-              <p className="font-medium">{data.donator?.name}</p>
-              <p className="text-sm text-neutral/60">{data.donator?.email}</p>
+              <p className="font-semibold">{food.donator_name}</p>
+              <p className="text-sm text-gray-500">{food.donator_email}</p>
             </div>
           </div>
 
-          <div className="mt-4 space-y-1">
-            <p>
-              Serves <b>{data.quantity}</b> {data.quantity > 1 ? "people" : "person"}
-            </p>
-            <p>
-              Pickup: <b>{data.pickupLocation}</b>
-            </p>
-            <p>
-              Expires: <b>{new Date(data.expireDate).toLocaleDateString()}</b>
-            </p>
-            {data.notes && <p className="text-neutral/80 mt-2">{data.notes}</p>}
-            <p className="mt-2">
-              Status:{" "}
-              <span
-                className={`badge ${
-                  data.food_status === "Available" ? "badge-success" : "badge-neutral"
-                }`}
-              >
-                {data.food_status}
-              </span>
-            </p>
+          <div className="mt-4 text-sm text-gray-600">
+            <p><strong>Quantity:</strong> {food.food_quantity}</p>
+            <p className="mt-2"><strong>Pickup:</strong> {food.pickup_location}</p>
+            <p className="mt-2"><strong>Expires:</strong> {new Date(food.expire_date).toLocaleDateString()}</p>
+            <p className="mt-2"><strong>Status:</strong> {food.food_status}</p>
           </div>
-
-          {!isOwner && data.food_status === "Available" && (
-            <button onClick={() => setOpen(true)} className="btn btn-primary mt-6">
-              Request Food
-            </button>
-          )}
-        </div>
+        </aside>
       </div>
-
-      {/* Requests Table (Owner only) */}
-      {isOwner && (
-        <div className="mt-12">
-          <h2 className="font-display text-2xl font-extrabold mb-4">Food Requests</h2>
-          {loadingReq ? (
-            <Loader />
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Requester</th>
-                    <th>Location</th>
-                    <th>Reason</th>
-                    <th>Contact</th>
-                    <th>Status</th>
-                    <th className="text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {requests?.map((r) => (
-                    <tr key={r._id}>
-                      <td className="flex items-center gap-3">
-                        <img
-                          src={r.requester?.photo || "https://i.pravatar.cc/100?img=15"}
-                          className="w-8 h-8 rounded-full"
-                        />
-                        <div>
-                          <div className="font-medium">{r.requester?.name}</div>
-                          <div className="text-xs text-neutral/60">{r.requester?.email}</div>
-                        </div>
-                      </td>
-                      <td>{r.location}</td>
-                      <td className="max-w-xs">{r.reason}</td>
-                      <td>{r.contact}</td>
-                      <td>
-                        <span
-                          className={`badge ${
-                            r.status === "pending"
-                              ? "badge-warning"
-                              : r.status === "accepted"
-                              ? "badge-success"
-                              : "badge-neutral"
-                          }`}
-                        >
-                          {r.status}
-                        </span>
-                      </td>
-                      <td className="text-right">
-                        {r.status === "pending" && (
-                          <>
-                            <button
-                              onClick={() => acceptMutation.mutate(r._id)}
-                              className="btn btn-xs btn-success mr-2"
-                            >
-                              Accept
-                            </button>
-                            <button
-                              onClick={() => rejectMutation.mutate(r._id)}
-                              className="btn btn-xs btn-error"
-                            >
-                              Reject
-                            </button>
-                          </>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                  {requests?.length === 0 && (
-                    <tr>
-                      <td colSpan={6} className="text-center py-6 text-neutral/70">
-                        No requests yet.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
-
-      {open && <RequestModal foodId={id} onClose={() => setOpen(false)} />}
-    </section>
+    </div>
   );
-}
+};
+
+export default FoodDetails;

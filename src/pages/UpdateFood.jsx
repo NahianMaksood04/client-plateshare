@@ -1,80 +1,103 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useParams, useNavigate } from 'react-router-dom';
-import useAxios from '../hooks/useAxios';
-import { useForm } from 'react-hook-form';
-import Loader from '../components/Loader';
-import toast from 'react-hot-toast';
+import React, { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axiosSecure from "../api/axiosSecure";
+import axios from "axios";
+import { useForm } from "react-hook-form";
+import LoadingSpinner from "../components/LoadingSpinner";
+import toast from "react-hot-toast";
 
-export default function UpdateFood() {
+const imgbbKey = import.meta.env.VITE_IMGBB_API_KEY;
+
+const fetchFood = async (id) => {
+  const res = await axiosSecure.get(`/foods/${id}`);
+  return res.data;
+};
+
+const uploadToImgbb = async (file) => {
+  const dataUrl = await new Promise((res, rej) => {
+    const reader = new FileReader();
+    reader.onload = () => res(reader.result);
+    reader.onerror = (e) => rej(e);
+    reader.readAsDataURL(file);
+  });
+  const base64 = dataUrl.split(",")[1];
+  const form = new FormData();
+  form.append("image", base64);
+  const resp = await axios.post(`https://api.imgbb.com/1/upload?key=${imgbbKey}`, form);
+  return resp.data.data.url;
+};
+
+const UpdateFood = () => {
   const { id } = useParams();
-  const api = useAxios();
   const navigate = useNavigate();
-  const qc = useQueryClient();
+  const queryClient = useQueryClient();
+  const { data: food, isLoading } = useQuery(["foodForUpdate", id], () => fetchFood(id));
+  const { register, handleSubmit, reset, setValue } = useForm();
+  const [uploading, setUploading] = useState(false);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['food', id],
-    queryFn: async () => (await api.get(`/api/foods/${id}`)).data
-  });
-
-  const { register, handleSubmit } = useForm();
-
-  const mutation = useMutation({
-    mutationFn: async (payload) => (await api.patch(`/api/foods/${id}`, payload)).data,
-    onSuccess: () => {
-      toast.success('Food updated');
-      qc.invalidateQueries({ queryKey: ['food', id] });
-      qc.invalidateQueries({ queryKey: ['my-foods'] });
-      navigate('/manage-foods');
+  useEffect(() => {
+    if (food) {
+      setValue("food_name", food.food_name);
+      setValue("food_quantity", food.food_quantity);
+      setValue("pickup_location", food.pickup_location);
+      setValue("expire_date", new Date(food.expire_date).toISOString().slice(0, 10));
+      setValue("additional_notes", food.additional_notes);
     }
+  }, [food]);
+
+  const updateMutation = useMutation((payload) => axiosSecure.patch(`/foods/${id}`, payload), {
+    onSuccess: () => {
+      toast.success("Updated");
+      queryClient.invalidateQueries(["myFoods"]);
+      queryClient.invalidateQueries(["availableFoods"]);
+      navigate("/manage-my-foods");
+    },
   });
 
-  const onSubmit = (dataForm) => {
-    const payload = {
-      name: dataForm.name,
-      quantity: Number(dataForm.quantity),
-      pickupLocation: dataForm.pickupLocation,
-      expireDate: dataForm.expireDate,
-      notes: dataForm.notes
-    };
-    mutation.mutate(payload);
+  if (isLoading) return <LoadingSpinner />;
+
+  const onSubmit = async (data) => {
+    try {
+      setUploading(true);
+      let imageUrl = food.food_image;
+      if (data.food_image?.length) {
+        imageUrl = await uploadToImgbb(data.food_image[0]);
+      }
+      const payload = {
+        food_name: data.food_name,
+        food_image: imageUrl,
+        food_quantity: data.food_quantity,
+        pickup_location: data.pickup_location,
+        expire_date: data.expire_date,
+        additional_notes: data.additional_notes,
+      };
+      updateMutation.mutate(payload);
+    } catch (err) {
+      toast.error("Update failed");
+    } finally {
+      setUploading(false);
+    }
   };
 
-  if (isLoading) return <Loader />;
-
   return (
-    <section className="container mx-auto px-4 py-10">
-      <h1 className="font-display text-3xl font-extrabold mb-6">Update Food</h1>
-      <form onSubmit={handleSubmit(onSubmit)} className="grid md:grid-cols-2 gap-6">
-        <div className="space-y-3">
-          <div>
-            <label className="label">Food Name</label>
-            <input className="input input-bordered w-full" defaultValue={data?.name} {...register('name')} />
-          </div>
-          <div>
-            <label className="label">Food Quantity (Serves)</label>
-            <input type="number" min="1" className="input input-bordered w-full" defaultValue={data?.quantity} {...register('quantity')} />
-          </div>
-        </div>
-        <div className="space-y-3">
-          <div>
-            <label className="label">Pickup Location</label>
-            <input className="input input-bordered w-full" defaultValue={data?.pickupLocation} {...register('pickupLocation')} />
-          </div>
-          <div>
-            <label className="label">Expire Date</label>
-            <input type="date" className="input input-bordered w-full" defaultValue={data?.expireDate?.slice(0,10)} {...register('expireDate')} />
-          </div>
-          <div>
-            <label className="label">Additional Notes</label>
-            <textarea className="textarea textarea-bordered w-full" rows={3} defaultValue={data?.notes} {...register('notes')} />
-          </div>
-          <div className="pt-1">
-            <button disabled={mutation.isLoading} className="btn btn-primary">
-              {mutation.isLoading ? 'Updating...' : 'Update'}
-            </button>
-          </div>
+    <div className="container mx-auto px-6 py-10">
+      <h2 className="text-2xl font-semibold mb-6">Update Food</h2>
+      <form onSubmit={handleSubmit(onSubmit)} className="max-w-2xl bg-white p-6 rounded shadow">
+        <input {...register("food_name", { required: true })} className="input input-bordered w-full mb-3" />
+        <input type="file" {...register("food_image")} accept="image/*" className="w-full mb-3" />
+        <input {...register("food_quantity", { required: true })} className="input input-bordered w-full mb-3" />
+        <input {...register("pickup_location", { required: true })} className="input input-bordered w-full mb-3" />
+        <input type="date" {...register("expire_date", { required: true })} className="input input-bordered w-full mb-3" />
+        <textarea {...register("additional_notes")} className="textarea textarea-bordered w-full mb-3" />
+        <div className="flex gap-3">
+          <button type="submit" className="btn btn-primary" disabled={uploading}>
+            {uploading ? "Updating..." : "Update Food"}
+          </button>
         </div>
       </form>
-    </section>
+    </div>
   );
-}
+};
+
+export default UpdateFood;

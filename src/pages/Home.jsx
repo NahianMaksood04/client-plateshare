@@ -1,155 +1,122 @@
-import { motion } from "framer-motion";
+import React from "react";
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Link, useNavigate } from "react-router-dom";
-import useAxios from "../hooks/useAxios";
-import FoodCard from "../components/FoodCard";
-import Loader from "../components/Loader";
+import axios from "axios";
+import { motion } from "framer-motion";
+import AOS from "aos";
+import "aos/dist/aos.css";
+import LoadingSpinner from "../components/LoadingSpinner";
 
-export default function Home() {
-  const api = useAxios();
-  const navigate = useNavigate();
-  const { data, isLoading } = useQuery({
-    queryKey: ["featured"],
-    queryFn: async () => (await api.get("/api/foods/featured")).data,
+AOS.init();
+
+const fetchFeatured = async () => {
+  const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/foods/featured`);
+  return res.data;
+};
+
+const Home = () => {
+  const { data, isLoading } = useQuery(["featuredFoods"], fetchFeatured, {
+    staleTime: 1000 * 60 * 2,
   });
 
   return (
-    <>
+    <div className="container mx-auto px-6 py-12">
       {/* Hero */}
-      <section className="bg-hero-gradient relative overflow-hidden">
-        <div className="container mx-auto px-4 py-20 md:py-28 relative">
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="max-w-3xl"
-          >
-            <h1 className="font-display text-4xl md:text-6xl font-extrabold leading-tight">
-              Share Surplus. Feed Community.
-            </h1>
-            <p className="mt-4 text-lg text-neutral/80">
-              PlateShare connects neighbors to reduce food waste. Donate extra
-              meals or find available food near you.
-            </p>
-            <div className="mt-6 flex gap-3">
-              <button
-                onClick={() => navigate("/foods")}
-                className="btn btn-primary"
-              >
-                View All Foods
-              </button>
-              <Link to="/add-food" className="btn btn-secondary">
-                Donate Food
-              </Link>
-            </div>
-          </motion.div>
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+        <motion.div initial={{ x: -50, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
+          <h1 className="text-4xl md:text-5xl font-extrabold leading-tight">
+            Share surplus. Feed neighbors. Build community.
+          </h1>
+          <p className="mt-4 text-lg text-gray-600">
+            PlateShare connects people who have extra food with neighbors who need it. Post, browse,
+            request, and collect with ease.
+          </p>
+          <div className="mt-6 flex gap-3">
+            <Link to="/available-foods" className="btn btn-primary btn-lg">
+              View All Foods
+            </Link>
+            <Link to="/add-food" className="btn btn-ghost btn-lg">
+              Donate Food
+            </Link>
+          </div>
+        </motion.div>
 
-          <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.15 }}
-            className="absolute -top-10 right-10 w-64 h-64 bg-primary hero-blob rounded-full"
+        <motion.div initial={{ x: 50, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
+          <img
+            src="/assets/hero-food.jpg"
+            alt="Community sharing"
+            className="w-full rounded-xl shadow-lg object-cover h-72 md:h-96"
           />
-          <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.25 }}
-            className="absolute bottom-0 -left-10 w-72 h-72 bg-secondary hero-blob rounded-full"
-          />
-        </div>
+        </motion.div>
       </section>
 
-      {/* Featured Foods */}
-      <section className="container mx-auto px-4 py-12">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="font-display text-2xl md:text-3xl font-extrabold">
-            Featured Foods
-          </h2>
-          <Link
-            to="/foods"
-            className="btn btn-outline btn-primary btn-sm"
-          >
+      {/* Featured */}
+      <section className="mt-12">
+        <h2 className="text-2xl font-semibold mb-4">Featured Donations</h2>
+        {isLoading ? (
+          <LoadingSpinner />
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {data?.length ? (
+              data.map((food) => (
+                <div
+                  key={food._id}
+                  data-aos="fade-up"
+                  className="card bg-white shadow-md rounded-lg overflow-hidden"
+                >
+                  <img src={food.food_image} alt={food.food_name} className="h-44 w-full object-cover" />
+                  <div className="p-4">
+                    <h3 className="text-xl font-semibold">{food.food_name}</h3>
+                    <p className="text-sm text-gray-500 mt-1">{food.food_quantity}</p>
+                    <p className="text-sm text-gray-500 mt-1">Pickup: {food.pickup_location}</p>
+                    <div className="mt-3 flex justify-between items-center">
+                      <Link to={`/food/${food._id}`} className="btn btn-sm btn-outline">
+                        View Details
+                      </Link>
+                      <span className="text-xs text-gray-400">
+                        Expires: {new Date(food.expire_date).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-500">No featured donations at the moment.</p>
+            )}
+          </div>
+        )}
+        <div className="mt-6 text-center">
+          <Link to="/available-foods" className="btn btn-outline">
             Show All
           </Link>
         </div>
-        {isLoading ? (
-          <Loader />
-        ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {data?.map((f) => (
-              <FoodCard key={f._id} food={f} />
-            ))}
-          </div>
-        )}
       </section>
 
-      {/* How It Works */}
-      <section className="container mx-auto px-4 py-12">
-        <h2 className="font-display text-2xl md:text-3xl font-extrabold text-center mb-8">
-          How It Works
-        </h2>
-        <div className="grid md:grid-cols-3 gap-6">
-          <div className="card bg-base-100 border h-full">
-            <div className="card-body">
-              <h3 className="card-title">1. Post Food</h3>
-              <p>
-                List surplus food with quantity, pickup location, and expiry
-                date. A few clicks is all it takes.
-              </p>
-            </div>
-          </div>
-          <div className="card bg-base-100 border h-full">
-            <div className="card-body">
-              <h3 className="card-title">2. Find Food</h3>
-              <p>
-                Browse available meals around you and view details to request
-                what you need.
-              </p>
-            </div>
-          </div>
-          <div className="card bg-base-100 border h-full">
-            <div className="card-body">
-              <h3 className="card-title">3. Collect</h3>
-              <p>
-                Once accepted by the donator, pick up the food at the agreed
-                location. Simple and safe.
-              </p>
-            </div>
-          </div>
+      {/* How it works */}
+      <section className="mt-12 grid md:grid-cols-3 gap-6">
+        <div className="p-6 bg-base-100 rounded-lg shadow-sm" data-aos="fade-right">
+          <h4 className="font-bold">1. Post Food</h4>
+          <p className="mt-2 text-sm text-gray-600">Share what's left — upload a photo, quantity, and pickup address.</p>
+        </div>
+        <div className="p-6 bg-base-100 rounded-lg shadow-sm" data-aos="fade-up">
+          <h4 className="font-bold">2. Find Food</h4>
+          <p className="mt-2 text-sm text-gray-600">Search available donations nearby and view details.</p>
+        </div>
+        <div className="p-6 bg-base-100 rounded-lg shadow-sm" data-aos="fade-left">
+          <h4 className="font-bold">3. Collect</h4>
+          <p className="mt-2 text-sm text-gray-600">Request and coordinate pickup with the donor.</p>
         </div>
       </section>
 
-      {/* Mission / Stats */}
-      <section className="container mx-auto px-4 py-12">
-        <div className="grid md:grid-cols-2 gap-6 items-center">
-          <div className="space-y-3">
-            <h2 className="font-display text-2xl md:text-3xl font-extrabold">
-              Our Mission
-            </h2>
-            <p>
-              We aim to reduce food waste and strengthen communities.
-              PlateShare empowers neighbors to share, support, and care.
-            </p>
-          </div>
-          <div className="grid grid-cols-3 gap-4">
-            <div className="stat bg-base-100 border rounded-box">
-              <div className="stat-title">Meals Shared</div>
-              <div className="stat-value text-primary">1.2K</div>
-              <div className="stat-desc">and counting</div>
-            </div>
-            <div className="stat bg-base-100 border rounded-box">
-              <div className="stat-title">Donators</div>
-              <div className="stat-value text-secondary">420</div>
-              <div className="stat-desc">active</div>
-            </div>
-            <div className="stat bg-base-100 border rounded-box">
-              <div className="stat-title">Requests</div>
-              <div className="stat-value text-accent">2.8K</div>
-              <div className="stat-desc">processed</div>
-            </div>
-          </div>
-        </div>
+      {/* Mission */}
+      <section className="mt-12 p-6 rounded-lg bg-gradient-to-r from-yellow-50 to-green-50" data-aos="zoom-in">
+        <h3 className="text-2xl font-semibold">Our Mission</h3>
+        <p className="mt-2 text-gray-700">
+          Reduce food waste and nourish our community. PlateShare makes giving simple and dignified.
+        </p>
       </section>
-    </>
+    </div>
   );
-}
+};
+
+export default Home;
