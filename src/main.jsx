@@ -1,85 +1,23 @@
-import React from "react";
-import ReactDOM from "react-dom/client";
-import "./index.css";
-import { RouterProvider, createBrowserRouter } from "react-router-dom";
-import App from "./App";
-import AuthProvider from "./contexts/AuthProvider";
-import QueryProvider from "./providers/QueryProvider";
-import { Toaster } from "react-hot-toast";
-import Home from "./pages/Home";
-import AvailableFoods from "./pages/AvailableFoods";
-import AddFood from "./pages/AddFood";
-import ManageMyFoods from "./pages/ManageMyFoods";
-import UpdateFood from "./pages/UpdateFood";
-import MyFoodRequests from "./pages/MyFoodRequests";
-import FoodDetails from "./pages/FoodDetails";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import ErrorPage from "./pages/ErrorPage";
-import ProtectedRoute from "./components/ProtectedRoute";
-import MainLayout from "./layouts/MainLayout";
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from 'react-hot-toast';
+import AppRoutes from './routes/AppRoutes';
+import './index.css';
+import { AuthProvider } from './hooks/useAuth';
 
-const router = createBrowserRouter([
-  {
-    path: "/",
-    element: <MainLayout />,
-    errorElement: <ErrorPage />,
-    children: [
-      { index: true, element: <Home /> },
-      { path: "available-foods", element: <AvailableFoods /> },
-      {
-        path: "food/:id",
-        element: (
-          <ProtectedRoute>
-            <FoodDetails />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "add-food",
-        element: (
-          <ProtectedRoute>
-            <AddFood />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "manage-my-foods",
-        element: (
-          <ProtectedRoute>
-            <ManageMyFoods />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "update-food/:id",
-        element: (
-          <ProtectedRoute>
-            <UpdateFood />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "my-food-requests",
-        element: (
-          <ProtectedRoute>
-            <MyFoodRequests />
-          </ProtectedRoute>
-        ),
-      },
-    ],
-  },
-  { path: "/login", element: <Login /> },
-  { path: "/register", element: <Register /> },
-]);
+const queryClient = new QueryClient();
 
-ReactDOM.createRoot(document.getElementById("root")).render(
+createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <AuthProvider>
-      <QueryProvider>
-        <RouterProvider router={router} />
-        <Toaster position="top-center" />
-      </QueryProvider>
-    </AuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <BrowserRouter>
+          <AppRoutes />
+          <Toaster position="top-right" />
+        </BrowserRouter>
+      </AuthProvider>
+    </QueryClientProvider>
   </React.StrictMode>
 );

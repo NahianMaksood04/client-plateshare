@@ -1,8 +1,28 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Poppins:wght@600;700&display=swap');
+
+:root {
+  --bg: #fff;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-html, body {
-  scroll-behavior: smooth;
-  background-color: #fffaf5;
+/* small startup animations */
+.fade-in {
+  animation: fadeIn 0.7s ease both;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+html, body, #root {
+  height: 100%;
+}
+body {
+  font-family: var(--font-body, 'Inter', system-ui);
+  background: linear-gradient(180deg, #fff 0%, #fafafa 100%);
+  color: #14313D;
 }

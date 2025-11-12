@@ -1,53 +1,44 @@
-import React from "react";
-import { useForm } from "react-hook-form";
-import { useAuth } from "../hooks/useAuth";
-import { useNavigate, useLocation, Link } from "react-router-dom";
-import toast from "react-hot-toast";
+import React from 'react';
+import { useForm } from 'react-hook-form';
+import { useAuth } from '../hooks/useAuth';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 
-const Login = () => {
-  const { login, googleLogin } = useAuth();
+export default function Login() {
+  const { register: registerField, handleSubmit } = useForm();
+  const { login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const from = location.state?.from?.pathname || "/";
-
-  const { register, handleSubmit } = useForm();
+  const from = location.state?.from || '/';
 
   const onSubmit = async (data) => {
     try {
-      await login(data.email, data.password);
-      toast.success("Logged in");
+      await login({ email: data.email, password: data.password });
       navigate(from, { replace: true });
-    } catch (err) {
-      toast.error(err?.message || "Login failed");
-    }
+    } catch (err) {}
   };
 
   const handleGoogle = async () => {
     try {
-      await googleLogin();
-      toast.success("Logged in with Google");
+      await loginWithGoogle();
       navigate(from, { replace: true });
-    } catch (err) {
-      toast.error("Google login failed");
-    }
+    } catch (err) {}
   };
 
   return (
-    <div className="min-h-[70vh] flex items-center justify-center">
-      <div className="w-full max-w-md bg-white p-8 rounded shadow">
-        <h2 className="text-2xl font-semibold mb-4">Login</h2>
-        <form onSubmit={handleSubmit(onSubmit)} className="grid gap-3">
-          <input {...register("email", { required: true })} placeholder="Email" className="input input-bordered" />
-          <input {...register("password", { required: true })} type="password" placeholder="Password" className="input input-bordered" />
-          <button className="btn btn-primary">Login</button>
+    <div className="container mx-auto px-4 py-12">
+      <div className="max-w-md mx-auto bg-white p-6 rounded shadow">
+        <h2 className="text-xl font-semibold mb-4">Login</h2>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
+          <input {...registerField('email')} type="email" placeholder="Email" className="input input-bordered w-full" required />
+          <input {...registerField('password')} type="password" placeholder="Password" className="input input-bordered w-full" required />
+          <button type="submit" className="btn btn-primary w-full">Login</button>
         </form>
-        <div className="mt-4">
-          <button className="btn btn-outline w-full" onClick={handleGoogle}>Login with Google</button>
+        <div className="divider">OR</div>
+        <button onClick={handleGoogle} className="btn btn-outline w-full">Login with Google</button>
+        <div className="text-center mt-3">
+          <Link to="/register" className="text-sm">New here? Register</Link>
         </div>
-        <p className="mt-4 text-sm">Don’t have an account? <Link to="/register" className="text-primary">Register</Link></p>
       </div>
     </div>
   );
-};
-
-export default Login;
+}
