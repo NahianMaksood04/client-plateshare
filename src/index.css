@@ -1,28 +1,33 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Poppins:wght@600;700&display=swap');
-
-:root {
-  --bg: #fff;
-}
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* small startup animations */
-.fade-in {
-  animation: fadeIn 0.7s ease both;
+@layer base {
+  body {
+    @apply font-sans text-neutral;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
+  }
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
-}
+/* Custom component styles */
+@layer components {
+  .btn-custom-primary {
+    @apply btn btn-primary text-white rounded-full shadow-lg transition-transform duration-300 ease-in-out;
+  }
+  .btn-custom-primary:hover {
+    @apply bg-opacity-90 scale-105;
+  }
 
-html, body, #root {
-  height: 100%;
-}
-body {
-  font-family: var(--font-body, 'Inter', system-ui);
-  background: linear-gradient(180deg, #fff 0%, #fafafa 100%);
-  color: #14313D;
+  .card-custom {
+    @apply bg-base-100 rounded-2xl shadow-lg transition-all duration-300 ease-in-out overflow-hidden;
+  }
+  .card-custom:hover {
+    @apply shadow-2xl transform -translate-y-1;
+  }
+
+  .input-custom {
+    @apply input input-bordered w-full bg-base-100 rounded-full border-base-300 focus:border-primary focus:ring-primary;
+  }
 }

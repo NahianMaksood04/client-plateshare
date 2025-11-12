@@ -1,5 +1,2 @@
-function App() {
-  return <div className="text-center">PlateShare App Running</div>;
-}
-export default App;
-
+import App from './App.jsx'
+import './index.css'

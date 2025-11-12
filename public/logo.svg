@@ -1,0 +1,11 @@
+<svg width="150" height="40" viewBox="0 0 150 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Icon: A simple, abstract representation of a plate and sharing -->
+  <path d="M20 35C11.7157 35 5 28.2843 5 20C5 11.7157 11.7157 5 20 5C28.2843 5 35 11.7157 35 20" stroke="#E57373" stroke-width="3" stroke-linecap="round"/>
+  <path d="M20 5C28.2843 5 35 11.7157 35 20C35 28.2843 28.2843 35 20 35" stroke="#81C784" stroke-width="3" stroke-linecap="round"/>
+  <path d="M20 20H35" stroke="#424242" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Text: PlateShare -->
+  <text x="45" y="27" font-family="Lexend, sans-serif" font-size="20" font-weight="600" fill="#424242">
+    PlateShare
+  </text>
+</svg>
