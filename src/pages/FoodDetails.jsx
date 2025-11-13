@@ -132,7 +132,7 @@ const FoodDetails = () => {
             <FoodRequestModal
                 isOpen={isRequestModalOpen}
                 onClose={() => setIsRequestModalOpen(false)}
-                foodId={food._id}
+                food={food}
             />
         </div>
     );

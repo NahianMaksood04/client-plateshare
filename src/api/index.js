@@ -24,37 +24,37 @@ api.interceptors.request.use(
 );
 
 export const getFeaturedFoods = async () => {
-    const { data } = await api.get("/foods/featured");
+    const { data } = await api.get("/api/foods/featured");
     return data;
 };
 
 export const getAvailableFoods = async () => {
-    const { data } = await api.get("/foods");
+    const { data } = await api.get("/api/foods");
     return data;
 };
 
 export const getFoodById = async (id) => {
-    const { data } = await api.get(`/foods/${id}`);
+    const { data } = await api.get(`/api/foods/${id}`);
     return data;
 };
 
 export const getManageableFoods = async () => {
-    const { data } = await api.get("/foods/manage");
+    const { data } = await api.get("/api/foods/manage");
     return data;
 };
 
 export const addFood = async (foodData) => {
-    const { data } = await api.post("/foods", foodData);
+    const { data } = await api.post("/api/foods", foodData);
     return data;
 };
 
 export const updateFood = async (id, foodData) => {
-    const { data } = await api.patch(`/foods/${id}`, foodData);
+    const { data } = await api.patch(`/api/foods/${id}`, foodData);
     return data;
 };
 
 export const deleteFood = async (id) => {
-    const { data } = await api.delete(`/foods/${id}`);
+    const { data } = await api.delete(`/api/foods/${id}`);
     return data;
 };
 
@@ -70,27 +70,27 @@ export const uploadImage = async (imageFile) => {
 };
 
 export const createRequest = async (requestData) => {
-    const { data } = await api.post("/requests", requestData);
+    const { data } = await api.post("/api/requests", requestData);
     return data;
 };
 
 export const getRequestsForFood = async (foodId) => {
-    const { data } = await api.get(`/requests/food/${foodId}`);
+    const { data } = await api.get(`/api/requests/food/${foodId}`);
     return data;
 };
 
 export const getMyRequests = async () => {
-    const { data } = await api.get("/requests/user");
+    const { data } = await api.get("/api/requests/user");
     return data;
 };
 
 export const acceptRequest = async (requestId) => {
-    const { data } = await api.patch(`/requests/${requestId}/accept`);
+    const { data } = await api.patch(`/api/requests/${requestId}/accept`);
     return data;
 };
 
 export const rejectRequest = async (requestId) => {
-    const { data } = await api.patch(`/requests/${requestId}/reject`);
+    const { data } = await api.patch(`/api/requests/${requestId}/reject`);
     return data;
 };
 
