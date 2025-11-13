@@ -1,19 +1,20 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import { RouterProvider } from 'react-router-dom'
-import { Toaster } from 'react-hot-toast'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { RouterProvider } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-import AuthProvider from './context/AuthContext'
-import { ThemeProvider } from './context/ThemeContext' // Import ThemeProvider
-import router from './routes/routes'
-import './index.css'
+import AuthProvider from "./context/AuthContext";
+import { ThemeProvider } from "./context/ThemeContext";
+import router from "./routes/routes";
+import "./index.css";
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient();
 
-ReactDOM.createRoot(document.getElementById('root')).render(
+ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <ThemeProvider> {/* Add ThemeProvider */}
+    <ThemeProvider>
+      {" "}
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <RouterProvider router={router} />
@@ -22,4 +23,4 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       </QueryClientProvider>
     </ThemeProvider>
   </React.StrictMode>,
-)
+);

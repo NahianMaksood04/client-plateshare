@@ -1,6 +1,6 @@
-import axios from 'axios';
-import { getAuth } from 'firebase/auth';
-import { app } from '../firebase/firebase.config';
+import axios from "axios";
+import { getAuth } from "firebase/auth";
+import { app } from "../firebase/firebase.config";
 
 const auth = getAuth(app);
 
@@ -9,27 +9,27 @@ const api = axios.create({
     withCredentials: true,
 });
 
-// Axios request interceptor to add the auth token
-api.interceptors.request.use(async (config) => {
-    const user = auth.currentUser;
-    if (user) {
-        const token = await user.getIdToken();
-        config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-}, (error) => {
-    return Promise.reject(error);
-});
+api.interceptors.request.use(
+    async (config) => {
+        const user = auth.currentUser;
+        if (user) {
+            const token = await user.getIdToken();
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    },
+);
 
-
-// Food APIs
 export const getFeaturedFoods = async () => {
-    const { data } = await api.get('/foods/featured');
+    const { data } = await api.get("/foods/featured");
     return data;
 };
 
 export const getAvailableFoods = async () => {
-    const { data } = await api.get('/foods');
+    const { data } = await api.get("/foods");
     return data;
 };
 
@@ -39,12 +39,12 @@ export const getFoodById = async (id) => {
 };
 
 export const getManageableFoods = async () => {
-    const { data } = await api.get('/foods/manage');
+    const { data } = await api.get("/foods/manage");
     return data;
 };
 
 export const addFood = async (foodData) => {
-    const { data } = await api.post('/foods', foodData);
+    const { data } = await api.post("/foods", foodData);
     return data;
 };
 
@@ -58,18 +58,19 @@ export const deleteFood = async (id) => {
     return data;
 };
 
-// Image Upload API
 export const uploadImage = async (imageFile) => {
     const formData = new FormData();
-    formData.append('image', imageFile);
+    formData.append("image", imageFile);
 
-    const { data } = await axios.post(`https://api.imgbb.com/1/upload?key=${import.meta.env.VITE_IMGBB_API_KEY}`, formData);
+    const { data } = await axios.post(
+        `https://api.imgbb.com/1/upload?key=${import.meta.env.VITE_IMGBB_API_KEY}`,
+        formData,
+    );
     return data.data.url;
 };
 
-// Request APIs
 export const createRequest = async (requestData) => {
-    const { data } = await api.post('/requests', requestData);
+    const { data } = await api.post("/requests", requestData);
     return data;
 };
 
@@ -79,7 +80,7 @@ export const getRequestsForFood = async (foodId) => {
 };
 
 export const getMyRequests = async () => {
-    const { data } = await api.get('/requests/user');
+    const { data } = await api.get("/requests/user");
     return data;
 };
 

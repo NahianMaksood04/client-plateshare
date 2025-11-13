@@ -1,13 +1,14 @@
-import React from 'react';
-import { Outlet } from 'react-router-dom';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
+import React from "react";
+import { Outlet } from "react-router-dom";
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
 
 const MainLayout = () => {
     return (
         <div className="flex flex-col min-h-screen bg-base-100">
             <Navbar />
-            <main className="flex-grow pt-20"> {/* Added padding-top for the fixed navbar */}
+            <main className="flex-grow pt-20">
+                {" "}
                 <Outlet />
             </main>
             <Footer />

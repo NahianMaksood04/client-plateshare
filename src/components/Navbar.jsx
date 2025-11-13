@@ -30,8 +30,7 @@ const Navbar = () => {
         <NavLink
           to="/"
           className={({ isActive }) =>
-            `transition-colors duration-200 hover:text-primary ${
-              isActive ? "text-primary font-bold" : "font-medium"
+            `transition-colors duration-200 hover:text-primary ${isActive ? "text-primary font-bold" : "font-medium"
             }`
           }
         >
@@ -42,8 +41,7 @@ const Navbar = () => {
         <NavLink
           to="/available-foods"
           className={({ isActive }) =>
-            `transition-colors duration-200 hover:text-primary ${
-              isActive ? "text-primary font-bold" : "font-medium"
+            `transition-colors duration-200 hover:text-primary ${isActive ? "text-primary font-bold" : "font-medium"
             }`
           }
         >
@@ -100,11 +98,10 @@ const Navbar = () => {
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ type: "spring", stiffness: 50, duration: 0.5 }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled
           ? "bg-base-100/90 backdrop-blur-sm shadow-md"
           : "bg-transparent"
-      }`}
+        }`}
     >
       <div className="container mx-auto px-4 flex items-center justify-between h-20">
         {/* Left: Logo */}
@@ -119,16 +116,11 @@ const Navbar = () => {
             whileHover={{ scale: 1.1 }}
             transition={{ type: "spring", stiffness: 200 }}
           />
-          
         </Link>
 
-        {/* Center: Nav Links (hidden on small screens) */}
         <ul className="hidden lg:flex space-x-8 text-lg">{navLinks}</ul>
 
-        {/* Right: Theme Toggle + User/Login */}
         <div className="flex items-center gap-3">
-          
-
           {user ? (
             userMenu
           ) : (
@@ -140,7 +132,6 @@ const Navbar = () => {
             </Link>
           )}
 
-          {/* Mobile Menu Button */}
           <button
             className="btn btn-ghost lg:hidden"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -167,7 +158,6 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile Dropdown */}
       {isMenuOpen && (
         <div className="lg:hidden bg-base-100/95 backdrop-blur-md shadow-md">
           <ul className="flex flex-col items-center space-y-4 py-4 text-lg">

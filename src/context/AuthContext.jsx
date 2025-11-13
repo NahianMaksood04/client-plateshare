@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect } from "react";
 import {
     getAuth,
     onAuthStateChanged,
@@ -8,9 +8,9 @@ import {
     GoogleAuthProvider,
     signInWithPopup,
     updateProfile,
-} from 'firebase/auth';
-import { app } from '../firebase/firebase.config';
-import { getFirebaseIdToken } from '../api/utils';
+} from "firebase/auth";
+import { app } from "../firebase/firebase.config";
+import { getFirebaseIdToken } from "../api/utils";
 
 export const AuthContext = createContext(null);
 const auth = getAuth(app);
@@ -45,7 +45,6 @@ const AuthProvider = ({ children }) => {
     const logout = async () => {
         setLoading(true);
         await signOut(auth);
-        // Clear the cookie on logout
         await getFirebaseIdToken(null, true);
     };
 
@@ -53,7 +52,6 @@ const AuthProvider = ({ children }) => {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
             setUser(currentUser);
             if (currentUser) {
-                // Get and set token in cookie
                 await getFirebaseIdToken(currentUser);
             }
             setLoading(false);
@@ -75,9 +73,7 @@ const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={authInfo}>
-            {children}
-        </AuthContext.Provider>
+        <AuthContext.Provider value={authInfo}>{children}</AuthContext.Provider>
     );
 };
 
